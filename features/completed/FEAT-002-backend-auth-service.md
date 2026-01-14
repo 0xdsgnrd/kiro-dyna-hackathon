@@ -27,16 +27,16 @@ With the project structure in place, we need to implement the backend authentica
 
 ## Acceptance Criteria
 
-- [ ] User model created with proper fields and indexes
-- [ ] Database tables created automatically on startup
-- [ ] Registration endpoint accepts email, username, password and returns user data
-- [ ] Registration endpoint rejects duplicate email/username with 400 error
-- [ ] Login endpoint accepts username/password and returns JWT token
-- [ ] Login endpoint rejects invalid credentials with 401 error
-- [ ] Passwords hashed with bcrypt (verify hash never matches plaintext)
-- [ ] JWT tokens include username in payload and expire after 30 minutes
-- [ ] All endpoints documented in Swagger UI at `/docs`
-- [ ] Backend tests pass with 80%+ coverage
+- [x] User model created with proper fields and indexes
+- [x] Database tables created automatically on startup
+- [x] Registration endpoint accepts email, username, password and returns user data
+- [x] Registration endpoint rejects duplicate email/username with 400 error
+- [x] Login endpoint accepts username/password and returns JWT token
+- [x] Login endpoint rejects invalid credentials with 401 error
+- [x] Passwords hashed with bcrypt (verify hash never matches plaintext)
+- [x] JWT tokens include username in payload and expire after 30 minutes
+- [x] All endpoints documented in Swagger UI at `/docs`
+- [x] Backend tests pass with 80%+ coverage
 
 ---
 
