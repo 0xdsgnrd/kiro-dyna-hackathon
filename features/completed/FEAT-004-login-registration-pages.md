@@ -29,16 +29,16 @@ Build the user-facing authentication pages where users can create accounts and s
 
 ## Acceptance Criteria
 
-- [ ] Login page accessible at `/login` with username and password fields
-- [ ] Registration page accessible at `/register` with email, username, and password fields
-- [ ] Successful login redirects to `/dashboard`
-- [ ] Successful registration auto-logs in and redirects to `/dashboard`
-- [ ] Failed login shows error message "Invalid credentials"
-- [ ] Failed registration shows error message "Registration failed"
-- [ ] Forms are responsive and functional on mobile (320px+) and desktop
-- [ ] Submit buttons disabled during API request
-- [ ] All form inputs have proper labels and placeholders
-- [ ] Pages styled with Tailwind CSS matching design system
+- [x] Login page accessible at `/login` with username and password fields
+- [x] Registration page accessible at `/register` with email, username, and password fields
+- [x] Successful login redirects to `/dashboard`
+- [x] Successful registration auto-logs in and redirects to `/dashboard`
+- [x] Failed login shows error message "Invalid credentials"
+- [x] Failed registration shows error message "Registration failed"
+- [x] Forms are responsive and functional on mobile (320px+) and desktop
+- [x] Submit buttons disabled during API request
+- [x] All form inputs have proper labels and placeholders
+- [x] Pages styled with Tailwind CSS matching design system
 
 ---
 
