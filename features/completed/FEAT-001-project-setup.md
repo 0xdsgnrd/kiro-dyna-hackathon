@@ -27,13 +27,13 @@ Starting from scratch, we need to set up the foundational project structure for 
 
 ## Acceptance Criteria
 
-- [ ] Frontend runs at `http://localhost:3000` with `npm run dev`
-- [ ] Backend runs at `http://localhost:8000` with `uvicorn app.main:app --reload`
-- [ ] Backend API docs accessible at `http://localhost:8000/docs`
-- [ ] CORS configured to allow requests from `http://localhost:3000`
-- [ ] Environment variables documented with example files
-- [ ] Database connection established and tested
-- [ ] All dependencies installed and documented in requirements files
+- [x] Frontend runs at `http://localhost:3000` with `npm run dev`
+- [x] Backend runs at `http://localhost:8000` with `uvicorn app.main:app --reload`
+- [x] Backend API docs accessible at `http://localhost:8000/docs`
+- [x] CORS configured to allow requests from `http://localhost:3000`
+- [x] Environment variables documented with example files
+- [x] Database connection established and tested
+- [x] All dependencies installed and documented in requirements files
 
 ---
 
