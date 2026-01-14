@@ -26,15 +26,15 @@ Create the foundational frontend code for handling authentication without buildi
 
 ## Acceptance Criteria
 
-- [ ] API client module exports functions for `register()` and `login()`
-- [ ] API client uses `NEXT_PUBLIC_API_URL` environment variable
-- [ ] AuthContext provides `user`, `token`, `login()`, `register()`, `logout()`, `isLoading`
-- [ ] Login function stores token in localStorage on success
-- [ ] Logout function clears token from localStorage
-- [ ] AuthContext loads token from localStorage on mount
-- [ ] All TypeScript types properly defined with no `any` types
-- [ ] Root layout wrapped with AuthProvider
-- [ ] Frontend linting and type checking passes
+- [x] API client module exports functions for `register()` and `login()`
+- [x] API client uses `NEXT_PUBLIC_API_URL` environment variable
+- [x] AuthContext provides `user`, `token`, `login()`, `register()`, `logout()`, `isLoading`
+- [x] Login function stores token in localStorage on success
+- [x] Logout function clears token from localStorage
+- [x] AuthContext loads token from localStorage on mount
+- [x] All TypeScript types properly defined with no `any` types
+- [x] Root layout wrapped with AuthProvider
+- [x] Frontend linting and type checking passes
 
 ---
 
