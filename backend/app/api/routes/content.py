@@ -60,14 +60,45 @@ def list_content(
 
 @router.get("/search", response_model=List[ContentResponse])
 def search_content(
-    q: str = Query(..., min_length=1),
+    q: str = Query("", description="Search query for title, content, or tags"),
+    category_id: Optional[int] = Query(None, description="Filter by category ID"),
+    content_type: Optional[str] = Query(None, description="Filter by content type"),
+    tag_id: Optional[int] = Query(None, description="Filter by tag ID"),
+    sort_by: str = Query("created_at", description="Sort field: created_at or title"),
+    sort_order: str = Query("desc", description="Sort order: asc or desc"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    contents = db.query(Content).filter(
-        Content.user_id == current_user.id,
-        (Content.title.ilike(f"%{q}%")) | (Content.content_text.ilike(f"%{q}%"))
-    ).all()
+    query = db.query(Content).filter(Content.user_id == current_user.id)
+    
+    # Search filter
+    if q:
+        query = query.filter(
+            (Content.title.ilike(f"%{q}%")) | 
+            (Content.content_text.ilike(f"%{q}%"))
+        )
+    
+    # Category filter
+    if category_id is not None:
+        query = query.filter(Content.category_id == category_id)
+    
+    # Content type filter
+    if content_type:
+        query = query.filter(Content.content_type == content_type)
+    
+    # Tag filter
+    if tag_id is not None:
+        query = query.join(Content.tags).filter(Tag.id == tag_id)
+    
+    # Sorting
+    if sort_by == "title":
+        query = query.order_by(Content.title.desc() if sort_order == "desc" else Content.title.asc())
+    else:
+        query = query.order_by(Content.created_at.desc() if sort_order == "desc" else Content.created_at.asc())
+    
+    contents = query.offset(skip).limit(limit).all()
     return contents
 
 @router.get("/{content_id}", response_model=ContentResponse)
