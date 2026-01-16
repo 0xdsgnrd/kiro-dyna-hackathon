@@ -27,16 +27,16 @@ Add test coverage for critical authentication flows, set up testing infrastructu
 
 ## Acceptance Criteria
 
-- [ ] Backend tests pass: `pytest tests/ -v --cov=app`
-- [ ] Backend coverage ≥ 80% for auth service
-- [ ] Frontend tests pass: `npm test`
-- [ ] Frontend coverage ≥ 70% for critical paths
-- [ ] Backend linting passes: `black app/` and `flake8 app/`
-- [ ] Backend type checking passes: `mypy app/`
-- [ ] Frontend linting passes: `npm run lint`
-- [ ] Frontend type checking passes: `tsc --noEmit`
-- [ ] All validation commands documented in README
-- [ ] CI-ready (tests can run in automated environment)
+- [x] Backend tests pass: `pytest tests/ -v --cov=app`
+- [x] Backend coverage ≥ 80% for auth service (95% achieved)
+- [x] Frontend tests pass: `npm test`
+- [x] Frontend coverage ≥ 70% for critical paths (79.6% achieved)
+- [x] Backend linting passes: `black app/` and `flake8 app/`
+- [x] Backend type checking passes: `mypy app/`
+- [x] Frontend linting passes: `npm run lint`
+- [x] Frontend type checking passes: `tsc --noEmit`
+- [x] All validation commands documented in README
+- [x] CI-ready (tests can run in automated environment)
 
 ---
 

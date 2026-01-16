@@ -27,16 +27,16 @@ Build the main user interface: a landing page that introduces the platform and a
 
 ## Acceptance Criteria
 
-- [ ] Landing page accessible at `/` with hero section and navigation
-- [ ] Landing page has "Get Started" and "Sign In" buttons
-- [ ] "Get Started" button links to `/register`
-- [ ] "Sign In" button links to `/login`
-- [ ] Dashboard accessible at `/dashboard` only when authenticated
-- [ ] Unauthenticated access to `/dashboard` redirects to `/login`
-- [ ] Dashboard displays welcome message and user interface
-- [ ] Dashboard has logout button that clears token and redirects to `/`
-- [ ] Both pages are responsive (320px+ mobile, desktop)
-- [ ] Navigation is consistent and functional
+- [x] Landing page accessible at `/` with hero section and navigation
+- [x] Landing page has "Get Started" and "Sign In" buttons
+- [x] "Get Started" button links to `/register`
+- [x] "Sign In" button links to `/login`
+- [x] Dashboard accessible at `/dashboard` only when authenticated
+- [x] Unauthenticated access to `/dashboard` redirects to `/login`
+- [x] Dashboard displays welcome message and user interface
+- [x] Dashboard has logout button that clears token and redirects to `/`
+- [x] Both pages are responsive (320px+ mobile, desktop)
+- [x] Navigation is consistent and functional
 
 ---
 

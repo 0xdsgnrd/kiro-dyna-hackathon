@@ -193,6 +193,53 @@ cd frontend
 npm run lint
 ```
 
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+pytest tests/ -v --cov=app
+```
+
+**Coverage**: 95% (10/10 tests passing)
+
+### Frontend Tests
+```bash
+cd frontend
+npm test
+npm run test:coverage  # With coverage report
+```
+
+**Coverage**: 79.6% for critical paths (4/4 tests passing)
+
+### Code Quality
+
+**Backend:**
+```bash
+cd backend
+# Type checking (requires mypy)
+python3 -m pip install mypy
+python3 -m mypy app/
+
+# Code formatting (requires black)
+python3 -m pip install black
+python3 -m black app/
+
+# Linting (requires flake8)
+python3 -m pip install flake8
+python3 -m flake8 app/
+```
+
+**Frontend:**
+```bash
+cd frontend
+# Linting
+npm run lint
+
+# Type checking
+npx tsc --noEmit
+```
+
 ## 📝 API Documentation
 
 Once the backend is running, visit:
