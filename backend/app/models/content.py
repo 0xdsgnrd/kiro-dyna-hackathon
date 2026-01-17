@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.db.session import Base
@@ -17,7 +17,16 @@ class Content(Base):
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
+    # Sharing fields
+    is_public = Column(Boolean, default=False)
+    share_token = Column(String(32), unique=True, nullable=True, index=True)
+    view_count = Column(Integer, default=0)
+
+    # Intelligence fields
+    reading_time = Column(Integer, nullable=True)  # minutes
+    quality_score = Column(Integer, nullable=True)  # 0-100
+
     # Relationships with string references to avoid circular imports
     user = relationship("User", back_populates="contents")
     source = relationship("ContentSource", back_populates="contents")
