@@ -9,6 +9,7 @@ class Content(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_id = Column(Integer, ForeignKey("content_sources.id", ondelete="SET NULL"), nullable=True)
     title = Column(String(200), nullable=False)
     url = Column(String(500), nullable=True)
     content_text = Column(Text, nullable=True)
@@ -17,7 +18,8 @@ class Content(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
-    # Relationships
+    # Relationships with string references to avoid circular imports
     user = relationship("User", back_populates="contents")
+    source = relationship("ContentSource", back_populates="contents")
     category = relationship("Category", back_populates="contents")
     tags = relationship("Tag", secondary=content_tags, back_populates="contents")

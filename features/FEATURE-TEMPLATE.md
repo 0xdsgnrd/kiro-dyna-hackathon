@@ -1,3 +1,4 @@
+claude
 claud# [FEATURE-ID] Feature Title
 
 ## Goal
