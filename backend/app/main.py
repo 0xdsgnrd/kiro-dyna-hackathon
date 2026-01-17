@@ -4,12 +4,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import engine, Base
-from app.api.routes import auth, content, tags, categories, content_sources
+from app.api.routes import auth, content as content_routes, tags, categories, content_sources
 from app.api.routes import analytics, preferences, sharing, export_import, intelligence
 from app.services.background_import import background_service
 
 # Import all models to ensure they're registered
-from app.models import user, content, tag, category, content_source, user_preferences
+from app.models import user, content as content_model, tag, category, content_source, user_preferences
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,7 +35,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
-app.include_router(content.router, prefix="/api/v1/content", tags=["content"])
+app.include_router(content_routes.router, prefix="/api/v1/content", tags=["content"])
 app.include_router(tags.router, prefix="/api/v1/tags", tags=["tags"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["categories"])
 app.include_router(content_sources.router, prefix="/api/v1/sources", tags=["content-sources"])
