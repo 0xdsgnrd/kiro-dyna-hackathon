@@ -1,15 +1,22 @@
 import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.db.session import engine, Base
 from app.api.routes import auth, content as content_routes, tags, categories, content_sources
 from app.api.routes import analytics, preferences, sharing, export_import, intelligence
 from app.services.background_import import background_service
+from app.monitoring.middleware import MonitoringMiddleware
 
 # Import all models to ensure they're registered
 from app.models import user, content as content_model, tag, category, content_source, user_preferences
+
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,6 +31,8 @@ async def lifespan(app: FastAPI):
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,6 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add monitoring middleware
+app.add_middleware(MonitoringMiddleware)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
@@ -52,3 +64,26 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+@app.get("/health/detailed")
+def detailed_health():
+    """Detailed health check including database status"""
+    from app.db.health import get_database_health
+    
+    try:
+        db_health = get_database_health()
+        return {
+            "status": "healthy" if db_health.get('connection') else "unhealthy",
+            "database": db_health,
+            "version": "1.0.0",
+            "environment": settings.ENVIRONMENT
+        }
+    except Exception as e:
+        from app.monitoring.metrics import metrics
+        metrics.record_health_check_failure()
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "version": "1.0.0",
+            "environment": settings.ENVIRONMENT
+        }

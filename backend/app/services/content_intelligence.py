@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 from typing import List, Dict, Optional, Tuple
 from collections import Counter
 from sqlalchemy.orm import Session
@@ -28,6 +29,14 @@ class ContentIntelligenceService:
 
     def __init__(self, db: Session):
         self.db = db
+
+    @lru_cache(maxsize=100)
+    def analyze_content_cached(self, content_id: int, content_hash: str) -> Dict:
+        """Cached content analysis to improve performance"""
+        content = self.db.query(Content).filter(Content.id == content_id).first()
+        if not content:
+            return {}
+        return self.analyze_content(content)
 
     def analyze_content(self, content: Content) -> Dict:
         """Perform comprehensive analysis on a content item"""
@@ -187,6 +196,41 @@ class ContentIntelligenceService:
 
         self.db.commit()
         return results
+
+    def get_search_suggestions(self, query: str, user_id: int, limit: int = 5) -> List[str]:
+        """Get search suggestions based on existing content titles and tags"""
+        if not query or len(query) < 2:
+            return []
+
+        query_lower = query.lower()
+        suggestions = set()
+
+        # Search in content titles
+        contents = self.db.query(Content).filter(
+            Content.user_id == user_id,
+            Content.title.ilike(f'%{query}%')
+        ).limit(limit * 2).all()
+
+        for content in contents:
+            # Extract words from title that match the query
+            words = content.title.lower().split()
+            for word in words:
+                if query_lower in word and len(word) > 2:
+                    suggestions.add(word)
+
+        # Search in tag names
+        tags = self.db.query(Tag).join(
+            Content.tags
+        ).filter(
+            Content.user_id == user_id,
+            Tag.name.ilike(f'%{query}%')
+        ).distinct().limit(limit).all()
+
+        for tag in tags:
+            if query_lower in tag.name.lower():
+                suggestions.add(tag.name)
+
+        return sorted(list(suggestions))[:limit]
 
     def _count_words(self, text: Optional[str]) -> int:
         """Count words in text"""

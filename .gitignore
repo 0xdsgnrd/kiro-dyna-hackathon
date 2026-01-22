@@ -10,14 +10,19 @@ ENV/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # FastAPI
 app.db
+test.db
 *.db
 
 # Node
 node_modules/
 .next/
+.swc/
 out/
 *.log
 
@@ -34,3 +39,8 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~

@@ -111,3 +111,15 @@ def batch_analyze_content(
     result = service.batch_analyze(current_user.id, limit)
 
     return BatchAnalysisResult(**result)
+
+@router.get("/search-suggestions")
+def get_search_suggestions(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get search suggestions based on existing content"""
+    service = ContentIntelligenceService(db)
+    suggestions = service.get_search_suggestions(q, current_user.id)
+    
+    return {"suggestions": suggestions}
