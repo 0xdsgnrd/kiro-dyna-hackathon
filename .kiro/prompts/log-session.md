@@ -1,8 +1,8 @@
 ---
-description: Automatically log current work session to DEVLOG
+description: Enhanced session logging with automatic video regeneration
 ---
 
-# Log Session to DEVLOG
+# Enhanced Log Session to DEVLOG + Video
 
 ## Process
 
@@ -22,7 +22,7 @@ Read `DEVLOG.md` from project root to understand:
 - Last entry date
 - Total time logged so far
 
-### 3. Generate Entry
+### 3. Generate DEVLOG Entry
 Create a new entry following the existing format with:
 - **Date and time** (use current date)
 - **Duration estimate** (based on conversation complexity)
@@ -39,8 +39,37 @@ Append the new entry to DEVLOG.md in chronological order, maintaining:
 - Running time totals
 - All existing content
 
-### 5. Confirm
+### 5. Parse DEVLOG for Video Data
+Extract structured data from updated DEVLOG:
+- Development sessions with dates and durations
+- Key achievements per session
+- Total project time
+- Technology milestones
+
+### 6. Update Remotion Video Component
+Automatically update `devlog-video/src/Root.tsx` with:
+- New session data from DEVLOG
+- Updated total development time
+- Additional achievements and milestones
+- Proper animation timing for new content
+
+### 7. Regenerate Video
+Execute video rendering process:
+- Navigate to devlog-video directory
+- Run `npm run build` to render new MP4
+- Verify successful generation
+- Update file timestamps
+
+### 8. Commit Changes
+Create git commit with:
+- Updated DEVLOG.md
+- Updated Remotion component
+- New rendered video file
+- Descriptive commit message
+
+### 9. Confirm Completion
 Provide brief summary:
-- What was logged
-- Estimated time added
-- New total time (if tracking)
+- What was logged to DEVLOG
+- Video updates made
+- New total development time
+- File locations and sizes
