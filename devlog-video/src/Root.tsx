@@ -40,10 +40,10 @@ const DevLogVideo: React.FC = () => {
       highlights: ["Remotion video project", "GitHub deployment", "Workflow automation"]
     },
     {
-      title: "Icon System Migration",
-      date: "Jan 23, 2026",
-      duration: "7.5h",
-      highlights: ["Professional SVG icons", "Build error fixes", "Component consistency"]
+      title: "Icon System & UI Polish",
+      date: "Jan 23-25, 2026",
+      duration: "7.8h",
+      highlights: ["Professional SVG icons", "Authentication fixes", "Design consistency"]
     }
   ];
 
@@ -100,7 +100,7 @@ const DevLogVideo: React.FC = () => {
             color: '#ff6b35',
             fontWeight: 'bold'
           }}>
-            Total Development Time: 26.8 hours
+            Total Development Time: 21.3 hours
           </div>
         </div>
       )}
