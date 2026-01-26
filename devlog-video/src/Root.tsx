@@ -44,6 +44,12 @@ const DevLogVideo: React.FC = () => {
       date: "Jan 23-25, 2026",
       duration: "7.8h",
       highlights: ["Professional SVG icons", "Authentication fixes", "Design consistency"]
+    },
+    {
+      title: "Home Page Enhancement",
+      date: "Jan 26, 2026",
+      duration: "0.1h",
+      highlights: ["Improved spacing", "Better visual balance", "Full viewport height"]
     }
   ];
 
@@ -100,7 +106,7 @@ const DevLogVideo: React.FC = () => {
             color: '#ff6b35',
             fontWeight: 'bold'
           }}>
-            Total Development Time: 21.3 hours
+            Total Development Time: 19.4 hours
           </div>
         </div>
       )}
