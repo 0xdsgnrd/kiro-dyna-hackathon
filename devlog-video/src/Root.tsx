@@ -50,6 +50,12 @@ const DevLogVideo: React.FC = () => {
       date: "Jan 26, 2026",
       duration: "0.1h",
       highlights: ["Improved spacing", "Better visual balance", "Full viewport height"]
+    },
+    {
+      title: "Navigation & Discovery",
+      date: "Jan 27, 2026",
+      duration: "0.3h",
+      highlights: ["GitHub integration", "Auth-aware navigation", "Enhanced discover page"]
     }
   ];
 
@@ -106,7 +112,7 @@ const DevLogVideo: React.FC = () => {
             color: '#ff6b35',
             fontWeight: 'bold'
           }}>
-            Total Development Time: 19.4 hours
+            Total Development Time: 19.6 hours
           </div>
         </div>
       )}
