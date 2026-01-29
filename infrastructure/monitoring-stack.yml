@@ -1,23 +1,22 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Monitoring and Observability Stack for Content Aggregation Platform'
+Description: 'Content Aggregator - Monitoring and Alerting Stack'
 
 Parameters:
-  ProjectName:
-    Type: String
-    Default: content-aggregator
   Environment:
     Type: String
     Default: prod
+  
   AlertEmail:
     Type: String
     Description: Email address for alerts
+    Default: admin@example.com
 
 Resources:
   # SNS Topic for Alerts
   AlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub ${ProjectName}-${Environment}-alerts
+      TopicName: !Sub ${Environment}-content-aggregator-alerts
       DisplayName: Content Aggregator Alerts
 
   AlertSubscription:
@@ -27,24 +26,11 @@ Resources:
       TopicArn: !Ref AlertTopic
       Endpoint: !Ref AlertEmail
 
-  # CloudWatch Log Groups
-  ECSLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /ecs/${ProjectName}-${Environment}
-      RetentionInDays: 14
-
-  ApplicationLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub /aws/application/${ProjectName}-${Environment}
-      RetentionInDays: 30
-
   # CloudWatch Alarms
   HighCPUAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${ProjectName}-${Environment}-high-cpu
+      AlarmName: !Sub ${Environment}-content-aggregator-high-cpu
       AlarmDescription: High CPU utilization
       MetricName: CPUUtilization
       Namespace: AWS/ECS
@@ -55,71 +41,91 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: ServiceName
-          Value: !Sub ${ProjectName}-service
+          Value: content-aggregator-service
         - Name: ClusterName
-          Value: !Sub ${ProjectName}-${Environment}
+          Value: !Sub ${Environment}-content-aggregator
       AlarmActions:
         - !Ref AlertTopic
 
   HighMemoryAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${ProjectName}-${Environment}-high-memory
+      AlarmName: !Sub ${Environment}-content-aggregator-high-memory
       AlarmDescription: High memory utilization
       MetricName: MemoryUtilization
       Namespace: AWS/ECS
       Statistic: Average
       Period: 300
       EvaluationPeriods: 2
-      Threshold: 85
+      Threshold: 80
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: ServiceName
-          Value: !Sub ${ProjectName}-service
+          Value: content-aggregator-service
         - Name: ClusterName
-          Value: !Sub ${ProjectName}-${Environment}
+          Value: !Sub ${Environment}-content-aggregator
+      AlarmActions:
+        - !Ref AlertTopic
+
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Environment}-content-aggregator-high-error-rate
+      AlarmDescription: High error rate from ALB
+      MetricName: HTTPCode_Target_5XX_Count
+      Namespace: AWS/ApplicationELB
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Sub app/${Environment}-content-aggregator-alb/*
+      AlarmActions:
+        - !Ref AlertTopic
+
+  LowHealthyHostsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Environment}-content-aggregator-low-healthy-hosts
+      AlarmDescription: Low number of healthy hosts
+      MetricName: HealthyHostCount
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: TargetGroup
+          Value: !Sub targetgroup/${Environment}-content-aggregator-tg/*
       AlarmActions:
         - !Ref AlertTopic
 
   DatabaseConnectionsAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub ${ProjectName}-${Environment}-db-connections
+      AlarmName: !Sub ${Environment}-content-aggregator-db-connections
       AlarmDescription: High database connections
       MetricName: DatabaseConnections
       Namespace: AWS/RDS
       Statistic: Average
       Period: 300
       EvaluationPeriods: 2
-      Threshold: 15
+      Threshold: 80
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: DBInstanceIdentifier
-          Value: !Sub ${ProjectName}-${Environment}-db
+          Value: !Sub ${Environment}-content-aggregator-db
       AlarmActions:
         - !Ref AlertTopic
-
-  HealthCheckAlarm:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmName: !Sub ${ProjectName}-${Environment}-health-check-failed
-      AlarmDescription: Application health check failures
-      MetricName: HealthCheckFailed
-      Namespace: !Sub ${ProjectName}/Application
-      Statistic: Sum
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 3
-      ComparisonOperator: GreaterThanOrEqualToThreshold
-      AlarmActions:
-        - !Ref AlertTopic
-      TreatMissingData: notBreaching
 
   # CloudWatch Dashboard
   MonitoringDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub ${ProjectName}-${Environment}-monitoring
+      DashboardName: !Sub ${Environment}-content-aggregator-monitoring
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -131,13 +137,13 @@ Resources:
               "height": 6,
               "properties": {
                 "metrics": [
-                  [ "AWS/ECS", "CPUUtilization", "ServiceName", "${ProjectName}-service", "ClusterName", "${ProjectName}-${Environment}" ],
+                  [ "AWS/ECS", "CPUUtilization", "ServiceName", "content-aggregator-service", "ClusterName", "${Environment}-content-aggregator" ],
                   [ ".", "MemoryUtilization", ".", ".", ".", "." ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
                 "region": "us-east-1",
-                "title": "ECS Resource Utilization",
+                "title": "ECS Service Metrics",
                 "period": 300
               }
             },
@@ -149,26 +155,45 @@ Resources:
               "height": 6,
               "properties": {
                 "metrics": [
-                  [ "AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${ProjectName}-${Environment}-db" ],
-                  [ ".", "DatabaseConnections", ".", "." ],
-                  [ ".", "ReadLatency", ".", "." ],
-                  [ ".", "WriteLatency", ".", "." ]
+                  [ "AWS/ApplicationELB", "RequestCount", "LoadBalancer", "app/${Environment}-content-aggregator-alb/*" ],
+                  [ ".", "HTTPCode_Target_2XX_Count", ".", "." ],
+                  [ ".", "HTTPCode_Target_4XX_Count", ".", "." ],
+                  [ ".", "HTTPCode_Target_5XX_Count", ".", "." ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
                 "region": "us-east-1",
-                "title": "RDS Performance",
+                "title": "Load Balancer Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${Environment}-content-aggregator-db" ],
+                  [ ".", "DatabaseConnections", ".", "." ],
+                  [ ".", "FreeableMemory", ".", "." ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "us-east-1",
+                "title": "Database Metrics",
                 "period": 300
               }
             },
             {
               "type": "log",
-              "x": 0,
+              "x": 12,
               "y": 6,
-              "width": 24,
+              "width": 12,
               "height": 6,
               "properties": {
-                "query": "SOURCE '/ecs/${ProjectName}-${Environment}'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 100",
+                "query": "SOURCE '/ecs/${Environment}-content-aggregator'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 100",
                 "region": "us-east-1",
                 "title": "Recent Errors",
                 "view": "table"
@@ -177,13 +202,122 @@ Resources:
           ]
         }
 
+  # Custom Metrics for Application
+  ApplicationMetricsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${Environment}-content-aggregator-metrics
+      RetentionInDays: 30
+
+  # Lambda function for custom metrics
+  MetricsCollectorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-content-aggregator-metrics-collector
+      Runtime: python3.11
+      Handler: index.lambda_handler
+      Role: !GetAtt MetricsCollectorRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import requests
+          from datetime import datetime
+          
+          cloudwatch = boto3.client('cloudwatch')
+          
+          def lambda_handler(event, context):
+              try:
+                  # Get application health
+                  health_url = event.get('health_url', 'http://localhost:8000/health/detailed')
+                  response = requests.get(health_url, timeout=10)
+                  
+                  if response.status_code == 200:
+                      health_data = response.json()
+                      
+                      # Send custom metrics
+                      cloudwatch.put_metric_data(
+                          Namespace='ContentAggregator/Application',
+                          MetricData=[
+                              {
+                                  'MetricName': 'HealthStatus',
+                                  'Value': 1 if health_data.get('status') == 'healthy' else 0,
+                                  'Unit': 'Count',
+                                  'Timestamp': datetime.utcnow()
+                              },
+                              {
+                                  'MetricName': 'DatabaseHealth',
+                                  'Value': 1 if health_data.get('database', {}).get('connection') else 0,
+                                  'Unit': 'Count',
+                                  'Timestamp': datetime.utcnow()
+                              }
+                          ]
+                      )
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps('Metrics collected successfully')
+                  }
+              except Exception as e:
+                  print(f"Error collecting metrics: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps(f'Error: {str(e)}')
+                  }
+
+  MetricsCollectorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CloudWatchMetrics
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+
+  # EventBridge rule to trigger metrics collection
+  MetricsCollectorSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${Environment}-content-aggregator-metrics-schedule
+      Description: Trigger metrics collection every 5 minutes
+      ScheduleExpression: 'rate(5 minutes)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt MetricsCollectorFunction.Arn
+          Id: MetricsCollectorTarget
+          Input: !Sub |
+            {
+              "health_url": "http://${Environment}-content-aggregator-alb.us-east-1.elb.amazonaws.com/health/detailed"
+            }
+
+  MetricsCollectorPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MetricsCollectorFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MetricsCollectorSchedule.Arn
+
 Outputs:
+  DashboardURL:
+    Description: CloudWatch Dashboard URL
+    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-content-aggregator-monitoring
+    
   AlertTopicArn:
     Description: SNS Topic ARN for alerts
     Value: !Ref AlertTopic
     Export:
-      Name: !Sub ${ProjectName}-${Environment}-alert-topic
-
-  DashboardURL:
-    Description: CloudWatch Dashboard URL
-    Value: !Sub https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-monitoring
+      Name: !Sub ${Environment}-AlertTopic

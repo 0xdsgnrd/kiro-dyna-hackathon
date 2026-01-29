@@ -8,6 +8,8 @@ from app.models.tag import Tag
 from app.models.category import Category
 from app.schemas.content import ContentCreate, ContentUpdate, ContentResponse
 from app.api.deps import get_current_user
+from app.websocket.manager import broadcast_content_event, WSEventType
+import asyncio
 
 router = APIRouter()
 
@@ -44,6 +46,19 @@ def create_content(
     db.add(content)
     db.commit()
     db.refresh(content)
+    
+    # Broadcast content creation event
+    asyncio.create_task(broadcast_content_event(
+        WSEventType.CONTENT_CREATED,
+        {
+            "id": content.id,
+            "title": content.title,
+            "content_type": content.content_type,
+            "created_at": content.created_at.isoformat()
+        },
+        current_user.id
+    ))
+    
     return content
 
 @router.get("", response_model=List[ContentResponse])

@@ -1,243 +1,193 @@
 #!/bin/bash
 
-# Rollback procedure for production deployment
-# Provides safe rollback mechanisms for failed deployments
+# Content Aggregator Platform - Rollback Script
+# This script rolls back the application to a previous version
 
 set -e
 
-PROJECT_NAME="content-aggregator"
-ENVIRONMENT="prod"
-AWS_REGION="us-east-1"
+# Configuration
+ENVIRONMENT=${1:-prod}
+TARGET_VERSION=${2}
+AWS_REGION=${AWS_REGION:-us-east-1}
+ECS_CLUSTER="content-aggregator-${ENVIRONMENT}"
+ECS_SERVICE="content-aggregator-service"
 
-echo "🔄 Production Rollback Procedure"
-echo "================================"
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-show_help() {
-    echo "Usage: $0 <rollback_type> [options]"
-    echo ""
-    echo "Rollback Types:"
-    echo "  ecs-service     - Rollback ECS service to previous task definition"
-    echo "  database        - Rollback database to previous backup"
-    echo "  frontend        - Rollback frontend deployment (Vercel)"
-    echo "  full            - Full system rollback (all components)"
-    echo ""
-    echo "Options:"
-    echo "  --revision N    - Specific revision to rollback to (for ECS)"
-    echo "  --backup-id ID  - Specific backup to restore (for database)"
-    echo "  --confirm       - Skip confirmation prompts"
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
+}
+
+warn() {
+    echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] WARNING: $1${NC}"
+}
+
+error() {
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1${NC}"
+    exit 1
+}
+
+# Show usage
+usage() {
+    echo "Usage: $0 [environment] [target_version]"
+    echo "  environment: prod, staging, dev (default: prod)"
+    echo "  target_version: specific version to rollback to (optional)"
     echo ""
     echo "Examples:"
-    echo "  $0 ecs-service --revision 5"
-    echo "  $0 database --backup-id db-backup-20260120"
-    echo "  $0 full --confirm"
+    echo "  $0 prod                    # Rollback to previous version"
+    echo "  $0 prod abc123             # Rollback to specific version"
+    exit 1
 }
 
-confirm_action() {
-    local action="$1"
-    if [[ "$CONFIRM" != "true" ]]; then
-        echo "⚠️  WARNING: About to perform rollback: $action"
-        read -p "Are you sure? (yes/no): " -r
-        if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-            echo "Rollback cancelled."
-            exit 1
-        fi
-    fi
+# List available versions
+list_versions() {
+    log "Available task definition versions:"
+    
+    aws ecs list-task-definitions \
+        --family-prefix content-aggregator-${ENVIRONMENT} \
+        --status ACTIVE \
+        --sort DESC \
+        --query 'taskDefinitionArns[0:10]' \
+        --output table
 }
 
-rollback_ecs_service() {
-    local revision="$1"
+# Get current deployment info
+get_current_deployment() {
+    log "Getting current deployment information..."
     
-    echo "🔄 Rolling back ECS service..."
-    
-    # Get current task definition
     CURRENT_TASK_DEF=$(aws ecs describe-services \
-        --cluster "${PROJECT_NAME}-${ENVIRONMENT}" \
-        --services "${PROJECT_NAME}-service" \
+        --cluster $ECS_CLUSTER \
+        --services $ECS_SERVICE \
         --query 'services[0].taskDefinition' \
         --output text)
     
-    echo "Current task definition: $CURRENT_TASK_DEF"
+    CURRENT_VERSION=$(echo $CURRENT_TASK_DEF | grep -o '[0-9]*$')
     
-    # Determine target revision
-    if [[ -n "$revision" ]]; then
-        TARGET_TASK_DEF="${PROJECT_NAME}-task:$revision"
-    else
-        # Get previous revision
-        CURRENT_REV=$(echo "$CURRENT_TASK_DEF" | cut -d':' -f2)
-        PREV_REV=$((CURRENT_REV - 1))
-        TARGET_TASK_DEF="${PROJECT_NAME}-task:$PREV_REV"
-    fi
-    
-    echo "Target task definition: $TARGET_TASK_DEF"
-    
-    confirm_action "ECS service rollback to $TARGET_TASK_DEF"
-    
-    # Update service
-    aws ecs update-service \
-        --cluster "${PROJECT_NAME}-${ENVIRONMENT}" \
-        --service "${PROJECT_NAME}-service" \
-        --task-definition "$TARGET_TASK_DEF"
-    
-    echo "✅ ECS service rollback initiated"
-    echo "⏳ Waiting for service to stabilize..."
-    
-    aws ecs wait services-stable \
-        --cluster "${PROJECT_NAME}-${ENVIRONMENT}" \
-        --services "${PROJECT_NAME}-service"
-    
-    echo "✅ ECS service rollback completed"
+    log "Current task definition: $CURRENT_TASK_DEF"
+    log "Current version: $CURRENT_VERSION"
 }
 
-rollback_database() {
-    local backup_id="$1"
-    
-    echo "🔄 Rolling back database..."
-    
-    # List available backups if no backup_id provided
-    if [[ -z "$backup_id" ]]; then
-        echo "Available database snapshots:"
-        aws rds describe-db-snapshots \
-            --db-instance-identifier "${PROJECT_NAME}-${ENVIRONMENT}-db" \
-            --query 'DBSnapshots[?Status==`available`].[DBSnapshotIdentifier,SnapshotCreateTime]' \
-            --output table
-        
-        read -p "Enter snapshot identifier to restore: " backup_id
+# Get target version
+get_target_version() {
+    if [ -z "$TARGET_VERSION" ]; then
+        # Get previous version (current - 1)
+        TARGET_VERSION=$((CURRENT_VERSION - 1))
+        log "No target version specified, using previous version: $TARGET_VERSION"
     fi
     
-    confirm_action "Database rollback to snapshot $backup_id"
+    TARGET_TASK_DEF="arn:aws:ecs:${AWS_REGION}:$(aws sts get-caller-identity --query Account --output text):task-definition/content-aggregator-${ENVIRONMENT}:${TARGET_VERSION}"
     
-    # Create a new DB instance from snapshot
-    NEW_DB_ID="${PROJECT_NAME}-${ENVIRONMENT}-db-restored-$(date +%Y%m%d%H%M%S)"
+    # Verify target version exists
+    if ! aws ecs describe-task-definition \
+        --task-definition $TARGET_TASK_DEF &> /dev/null; then
+        error "Target task definition does not exist: $TARGET_TASK_DEF"
+    fi
     
-    echo "Creating new database instance from snapshot..."
-    aws rds restore-db-instance-from-db-snapshot \
-        --db-instance-identifier "$NEW_DB_ID" \
-        --db-snapshot-identifier "$backup_id" \
-        --db-instance-class db.t3.micro
+    log "Target task definition: $TARGET_TASK_DEF"
+}
+
+# Perform rollback
+perform_rollback() {
+    log "Starting rollback to version $TARGET_VERSION..."
     
-    echo "⏳ Waiting for database restore to complete..."
-    aws rds wait db-instance-available --db-instance-identifier "$NEW_DB_ID"
+    # Confirm rollback
+    read -p "Are you sure you want to rollback from version $CURRENT_VERSION to $TARGET_VERSION? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log "Rollback cancelled"
+        exit 0
+    fi
     
-    echo "✅ Database restored to new instance: $NEW_DB_ID"
-    echo "⚠️  Manual step required: Update application configuration to use new database endpoint"
+    # Update service with target task definition
+    log "Updating ECS service..."
+    aws ecs update-service \
+        --cluster $ECS_CLUSTER \
+        --service $ECS_SERVICE \
+        --task-definition $TARGET_TASK_DEF \
+        --force-new-deployment
     
-    # Get new endpoint
-    NEW_ENDPOINT=$(aws rds describe-db-instances \
-        --db-instance-identifier "$NEW_DB_ID" \
-        --query 'DBInstances[0].Endpoint.Address' \
+    log "Waiting for service to stabilize..."
+    aws ecs wait services-stable \
+        --cluster $ECS_CLUSTER \
+        --services $ECS_SERVICE
+    
+    log "Rollback completed successfully"
+}
+
+# Health check after rollback
+health_check() {
+    log "Performing health check..."
+    
+    # Get load balancer DNS
+    ALB_DNS=$(aws cloudformation describe-stacks \
+        --stack-name content-aggregator-${ENVIRONMENT} \
+        --query 'Stacks[0].Outputs[?OutputKey==`LoadBalancerDNS`].OutputValue' \
         --output text)
     
-    echo "New database endpoint: $NEW_ENDPOINT"
+    local max_attempts=20
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        if curl -f "http://$ALB_DNS/health" &> /dev/null; then
+            log "Health check passed!"
+            return 0
+        fi
+        
+        log "Health check attempt $attempt/$max_attempts failed, retrying in 10s..."
+        sleep 10
+        ((attempt++))
+    done
+    
+    error "Health check failed after $max_attempts attempts"
 }
 
-rollback_frontend() {
-    echo "🔄 Rolling back frontend deployment..."
+# Emergency rollback (skip confirmations)
+emergency_rollback() {
+    log "EMERGENCY ROLLBACK MODE - Skipping confirmations"
     
-    confirm_action "Frontend rollback via Vercel"
+    get_current_deployment
+    get_target_version
     
-    # Check if Vercel CLI is available
-    if command -v vercel &> /dev/null; then
-        echo "Using Vercel CLI for rollback..."
-        cd frontend
-        vercel rollback
-        cd ..
-    else
-        echo "⚠️  Vercel CLI not found. Manual rollback required:"
-        echo "1. Go to Vercel dashboard"
-        echo "2. Select your project"
-        echo "3. Go to Deployments tab"
-        echo "4. Click 'Promote to Production' on a previous deployment"
+    log "Emergency rollback to version $TARGET_VERSION..."
+    aws ecs update-service \
+        --cluster $ECS_CLUSTER \
+        --service $ECS_SERVICE \
+        --task-definition $TARGET_TASK_DEF \
+        --force-new-deployment
+    
+    log "Emergency rollback initiated"
+}
+
+# Main function
+main() {
+    if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+        usage
     fi
     
-    echo "✅ Frontend rollback completed"
+    if [ "$1" = "--emergency" ]; then
+        emergency_rollback
+        exit 0
+    fi
+    
+    if [ "$1" = "--list" ]; then
+        list_versions
+        exit 0
+    fi
+    
+    log "Starting rollback process for environment: $ENVIRONMENT"
+    
+    get_current_deployment
+    get_target_version
+    perform_rollback
+    health_check
+    
+    log "Rollback completed successfully!"
+    log "Current version is now: $TARGET_VERSION"
 }
 
-rollback_full() {
-    echo "🔄 Performing full system rollback..."
-    
-    confirm_action "Full system rollback (ECS + Database + Frontend)"
-    
-    echo "Step 1: Rolling back ECS service..."
-    rollback_ecs_service
-    
-    echo "Step 2: Rolling back database..."
-    rollback_database
-    
-    echo "Step 3: Rolling back frontend..."
-    rollback_frontend
-    
-    echo "✅ Full system rollback completed"
-    echo "⚠️  Please verify all systems are working correctly"
-}
-
-# Parse command line arguments
-ROLLBACK_TYPE=""
-REVISION=""
-BACKUP_ID=""
-CONFIRM="false"
-
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        ecs-service|database|frontend|full)
-            ROLLBACK_TYPE="$1"
-            shift
-            ;;
-        --revision)
-            REVISION="$2"
-            shift 2
-            ;;
-        --backup-id)
-            BACKUP_ID="$2"
-            shift 2
-            ;;
-        --confirm)
-            CONFIRM="true"
-            shift
-            ;;
-        --help|-h)
-            show_help
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-done
-
-# Validate required parameters
-if [[ -z "$ROLLBACK_TYPE" ]]; then
-    echo "Error: Rollback type is required"
-    show_help
-    exit 1
-fi
-
-# Execute rollback based on type
-case $ROLLBACK_TYPE in
-    ecs-service)
-        rollback_ecs_service "$REVISION"
-        ;;
-    database)
-        rollback_database "$BACKUP_ID"
-        ;;
-    frontend)
-        rollback_frontend
-        ;;
-    full)
-        rollback_full
-        ;;
-    *)
-        echo "Error: Invalid rollback type: $ROLLBACK_TYPE"
-        show_help
-        exit 1
-        ;;
-esac
-
-echo ""
-echo "🎉 Rollback procedure completed!"
-echo "📋 Next steps:"
-echo "   1. Verify application functionality"
-echo "   2. Check monitoring dashboards"
-echo "   3. Notify stakeholders of rollback"
-echo "   4. Investigate root cause of original issue"
+# Run main function
+main "$@"

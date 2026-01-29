@@ -9,6 +9,8 @@ from app.core.config import settings
 from app.db.session import engine, Base
 from app.api.routes import auth, content as content_routes, tags, categories, content_sources
 from app.api.routes import analytics, preferences, sharing, export_import, intelligence
+from app.websocket.routes import router as websocket_router
+from app.websocket.manager import heartbeat_task
 from app.services.background_import import background_service
 from app.monitoring.middleware import MonitoringMiddleware
 
@@ -20,12 +22,16 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Start background import service
-    task = asyncio.create_task(background_service.start_scheduler())
+    # Start background services
+    import_task = asyncio.create_task(background_service.start_scheduler())
+    heartbeat_task_instance = asyncio.create_task(heartbeat_task())
+    
     yield
-    # Stop background service
+    
+    # Stop background services
     background_service.stop_scheduler()
-    task.cancel()
+    import_task.cancel()
+    heartbeat_task_instance.cancel()
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -56,6 +62,7 @@ app.include_router(preferences.router, prefix="/api/v1/preferences", tags=["pref
 app.include_router(sharing.router, prefix="/api/v1/sharing", tags=["sharing"])
 app.include_router(export_import.router, prefix="/api/v1/data", tags=["export-import"])
 app.include_router(intelligence.router, prefix="/api/v1/intelligence", tags=["intelligence"])
+app.include_router(websocket_router, prefix="/api/v1", tags=["websocket"])
 
 @app.get("/")
 def root():
