@@ -46,3 +46,36 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise credentials_exception
     return user
+
+from fastapi import WebSocket
+
+async def get_current_user_websocket(websocket: WebSocket, token: str = None):
+    """Get current user from WebSocket connection with proper JWT validation"""
+    try:
+        if not token:
+            return None
+        
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        username: str = payload.get("sub")
+        
+        if username is None:
+            return None
+            
+        from app.models.user import User
+        from app.db.session import SessionLocal
+        
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.username == username).first()
+            return user
+        finally:
+            db.close()
+            
+    except JWTError:
+        return None
+
+def validate_websocket_origin(websocket: WebSocket) -> bool:
+    """Validate WebSocket origin for security"""
+    origin = websocket.headers.get("origin")
+    allowed_origins = ["http://localhost:3000", "https://localhost:3000"]
+    return origin in allowed_origins

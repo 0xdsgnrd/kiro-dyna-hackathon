@@ -94,3 +94,15 @@ def detailed_health():
             "version": "1.0.0",
             "environment": settings.ENVIRONMENT
         }
+@app.get("/api/v1/health/performance")
+async def performance_metrics():
+    """Get basic performance metrics"""
+    import psutil
+    import time
+    
+    return {
+        "cpu_percent": psutil.cpu_percent(),
+        "memory_percent": psutil.virtual_memory().percent,
+        "timestamp": time.time(),
+        "status": "healthy"
+    }

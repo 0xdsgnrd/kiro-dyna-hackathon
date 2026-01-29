@@ -387,3 +387,103 @@ def test_get_nonexistent_content(auth_token):
         headers={"Authorization": f"Bearer {auth_token}"}
     )
     assert response.status_code == 404
+def test_update_content_success(auth_token):
+    """Test updating content successfully"""
+    client = TestClient(app)
+    
+    # Create content first
+    create_response = client.post("/api/v1/content", 
+        json={"title": "Original Title", "content": "Original content", "content_type": "article"},
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    content_id = create_response.json()["id"]
+    
+    # Update content
+    response = client.put(f"/api/v1/content/{content_id}",
+        json={"title": "Updated Title", "content": "Updated content", "content_type": "article"},
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    assert response.status_code == 200
+    assert response.json()["title"] == "Updated Title"
+
+def test_delete_content_success(auth_token):
+    """Test deleting content successfully"""
+    client = TestClient(app)
+    
+    # Create content first
+    create_response = client.post("/api/v1/content", 
+        json={"title": "To Delete", "content": "Delete me", "content_type": "article"},
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    content_id = create_response.json()["id"]
+    
+    # Delete content
+    response = client.delete(f"/api/v1/content/{content_id}",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    assert response.status_code == 204  # DELETE returns 204 No Content
+    
+    # Verify deleted
+    get_response = client.get(f"/api/v1/content/{content_id}",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    assert get_response.status_code == 404
+
+def test_content_validation_errors(auth_token):
+    """Test content validation errors"""
+    client = TestClient(app)
+    
+    # Test missing required fields
+    response = client.post("/api/v1/content", 
+        json={"title": ""},  # Empty title
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    assert response.status_code == 422
+def test_create_tag_success(auth_token):
+    """Test creating a tag"""
+    client = TestClient(app)
+    
+    response = client.post("/api/v1/tags", 
+        json={"name": "test-tag"},
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    assert response.status_code == 201  # CREATE returns 201
+    assert response.json()["name"] == "test-tag"
+
+def test_list_tags(auth_token):
+    """Test listing tags"""
+    client = TestClient(app)
+    
+    response = client.get("/api/v1/tags",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+def test_create_category_success(auth_token):
+    """Test creating a category"""
+    client = TestClient(app)
+    
+    response = client.post("/api/v1/categories", 
+        json={"name": "test-category"},
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    assert response.status_code == 201  # CREATE returns 201
+    assert response.json()["name"] == "test-category"
+
+def test_list_categories(auth_token):
+    """Test listing categories"""
+    client = TestClient(app)
+    
+    response = client.get("/api/v1/categories",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)

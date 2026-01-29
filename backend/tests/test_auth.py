@@ -62,3 +62,40 @@ def test_login_nonexistent_user(client):
         data={"username": "nonexistent", "password": "password"}
     )
     assert response.status_code == 401
+
+def test_get_current_user_success(client):
+    """Test getting current user with valid token"""
+    # Register and login
+    client.post("/api/v1/auth/register", json={
+        "username": "testuser2", 
+        "email": "test2@example.com", 
+        "password": "TestPass123"
+    })
+    
+    login_response = client.post("/api/v1/auth/token", data={
+        "username": "testuser2", 
+        "password": "TestPass123"
+    })
+    token = login_response.json()["access_token"]
+    
+    # Get current user
+    response = client.get("/api/v1/auth/me", headers={
+        "Authorization": f"Bearer {token}"
+    })
+    
+    assert response.status_code == 200
+    assert response.json()["username"] == "testuser2"
+
+def test_get_current_user_invalid_token(client):
+    """Test getting current user with invalid token"""
+    response = client.get("/api/v1/auth/me", headers={
+        "Authorization": "Bearer invalid_token"
+    })
+    
+    assert response.status_code == 401
+
+def test_get_current_user_no_token(client):
+    """Test getting current user without token"""
+    response = client.get("/api/v1/auth/me")
+    
+    assert response.status_code == 401

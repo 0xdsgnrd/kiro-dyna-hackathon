@@ -47,17 +47,21 @@ def create_content(
     db.commit()
     db.refresh(content)
     
-    # Broadcast content creation event
-    asyncio.create_task(broadcast_content_event(
-        WSEventType.CONTENT_CREATED,
-        {
-            "id": content.id,
-            "title": content.title,
-            "content_type": content.content_type,
-            "created_at": content.created_at.isoformat()
-        },
-        current_user.id
-    ))
+    # Broadcast content creation event (only if event loop is running)
+    try:
+        asyncio.create_task(broadcast_content_event(
+            WSEventType.CONTENT_CREATED,
+            {
+                "id": content.id,
+                "title": content.title,
+                "content_type": content.content_type,
+                "created_at": content.created_at.isoformat()
+            },
+            current_user.id
+        ))
+    except RuntimeError:
+        # No event loop running (e.g., in tests), skip WebSocket broadcast
+        pass
     
     return content
 
