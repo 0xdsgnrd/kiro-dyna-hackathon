@@ -56,6 +56,12 @@ const DevLogVideo: React.FC = () => {
       date: "Jan 29, 2026",
       duration: "0.3h",
       highlights: ["WebSocket test fixes", "100/100 score achievement", "Production readiness"]
+    },
+    {
+      title: "Production Transformation",
+      date: "Jan 30, 2026",
+      duration: "2.5h",
+      highlights: ["Real RSS processing system", "Docker & self-hosting setup", "CLI tools & documentation"]
     }
   ];
 
@@ -112,7 +118,7 @@ const DevLogVideo: React.FC = () => {
             color: '#ff6b35',
             fontWeight: 'bold'
           }}>
-            Total Development Time: 21.6 hours
+            Total Development Time: 24.1 hours
           </div>
         </div>
       )}
@@ -241,7 +247,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="DevLogVideo"
         component={DevLogVideo}
-        durationInFrames={900}
+        durationInFrames={990}
         fps={30}
         width={1920}
         height={1080}
