@@ -66,9 +66,10 @@ Content Aggregation Platform allows users to collect, organize, and manage conte
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone --recursive <your-repo-url>
    cd content-aggregator
    ```
+   > **Note:** The `--recursive` flag is required because the frontend is a git submodule. If you already cloned without it, run: `git submodule update --init`
 
 2. **Set up the backend**
    ```bash
