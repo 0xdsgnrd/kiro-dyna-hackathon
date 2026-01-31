@@ -5,7 +5,7 @@ A modern, full-stack content aggregation platform built with Next.js and FastAPI
 **Built for**: Kiro CLI Hackathon 2026  
 **Status**: Phase 5 Complete - Full Mobile & PWA Platform
 
-## 🎯 Project Overview
+## Project Overview
 
 Content Aggregation Platform allows users to collect, organize, and manage content from multiple sources in one centralized location. The platform features complete user authentication, content management with tags and categories, and advanced search and filtering capabilities.
 
@@ -26,7 +26,7 @@ Content Aggregation Platform allows users to collect, organize, and manage conte
 - ✅ **PWA Implementation**: Offline support, install prompts, push notifications
 - ✅ **Mobile Optimization**: Touch gestures, haptic feedback, voice search
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────┐
@@ -54,7 +54,7 @@ Content Aggregation Platform allows users to collect, organize, and manage conte
 └─────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -118,7 +118,7 @@ Content Aggregation Platform allows users to collect, organize, and manage conte
 3. Register a new account
 4. Login and access your dashboard
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 content-aggregator/
@@ -147,7 +147,7 @@ content-aggregator/
 └── README.md              # This file
 ```
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 - **Next.js 14+** - React framework with App Router
@@ -166,7 +166,7 @@ content-aggregator/
 - **SQLite** - Development database
 - **PostgreSQL** - Production database (recommended)
 
-## 🔐 Security
+## Security
 
 - **JWT Authentication**: Secure token-based authentication
 - **Password Hashing**: bcrypt with salt
@@ -174,7 +174,7 @@ content-aggregator/
 - **Input Validation**: Pydantic schemas for all inputs
 - **SQL Injection Prevention**: SQLAlchemy ORM
 
-## 🧪 Testing
+## Testing
 
 ### Backend Tests
 ```bash
@@ -214,7 +214,7 @@ cd frontend
 npm run lint
 ```
 
-## 🧪 Testing
+## Testing
 
 ### Backend Tests
 ```bash
@@ -261,7 +261,7 @@ npm run lint
 npx tsc --noEmit
 ```
 
-## 📝 API Documentation
+## API Documentation
 
 Once the backend is running, visit:
 - **Swagger UI**: http://localhost:8000/docs
@@ -288,7 +288,7 @@ Once the backend is running, visit:
 - `GET /api/v1/categories` - List all categories
 - `POST /api/v1/categories` - Create category
 
-## 🚧 Roadmap
+## Roadmap
 
 ### Phase 1: User Management ✅
 - [x] User registration and authentication
@@ -311,7 +311,7 @@ Once the backend is running, visit:
 - [ ] Content sharing and collaboration
 - [ ] Export/import system with data portability
 
-## 🤝 Development Workflow
+## Development Workflow
 
 This project uses Kiro CLI for development automation:
 
@@ -334,7 +334,7 @@ This project uses Kiro CLI for development automation:
 
 See [DEVLOG.md](DEVLOG.md) for detailed development history.
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Backend won't start
 - Ensure Python 3.11+ is installed
@@ -357,11 +357,11 @@ See [DEVLOG.md](DEVLOG.md) for detailed development history.
 - Verify backend SECRET_KEY is set
 - Check token expiration (default 30 minutes)
 
-## 📄 License
+## License
 
 MIT License - See LICENSE file for details
 
-## 🏆 Hackathon Submission
+## Hackathon Submission
 
 This project was built for the Kiro CLI Hackathon 2026. Key highlights:
 
@@ -375,4 +375,4 @@ For detailed development process, see [DEVLOG.md](DEVLOG.md).
 
 ---
 
-**Built with ❤️ using Kiro CLI**
+**Built using the Kiro CLI**
